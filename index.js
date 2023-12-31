@@ -16,15 +16,22 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
+const router = express.Router();
+
+router.get("/check/:token", async (req, res) => {
+  const { token } = req.params;
+  const data = JSON.parse(readFileSync("data.json"));
+  if (data.tokens.find((t) => t === token)) return res.sendStatus(200);
+  return res.sendStatus(400);
+});
+
+router.use((req, res, next) => {
   const pass = req.headers["authorization"];
   if (pass !== process.env.PASS) {
     return res.sendStatus(401); // Unauthorized
   }
   next();
 });
-
-const router = express.Router();
 
 router.get("/", async (req, res) => {
   const data = readFileSync("data.json");
@@ -64,13 +71,6 @@ router.patch("/", async (req, res) => {
   data.tokens = tokens;
   writeFileSync("data.json", JSON.stringify(data, 2, 2, 2));
   return res.status(200).json(data);
-});
-
-router.get("/check/:token", async (req, res) => {
-  const { token } = req.params;
-  const data = JSON.parse(readFileSync("data.json"));
-  if (data.tokens.find((t) => t === token)) return res.sendStatus(200);
-  return res.sendStatus(400);
 });
 
 app.use("/tokens", router);
